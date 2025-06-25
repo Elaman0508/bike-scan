@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bike Price Scanner</title>
+</head>
+<body>
+    <h1>🚲 Определи тип и цену велосипеда</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Загрузить</button>
+    </form>
+
+    {% if result %}
+        <hr>
+        <h2>Результат:</h2>
+        <p><strong>Тип:</strong> {{ result.type }}</p>
+        <p><strong>Цена:</strong> {{ result.estimated_price }}</p>
+        <img src="{{ result.photo.image.url }}" width="300">
+    {% endif %}
+</body>
+</html>
