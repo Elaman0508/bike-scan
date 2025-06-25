@@ -1,63 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Bike Price Scanner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>🚲 Bike Scanner</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+            padding: 40px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #222;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 8px;
+        }
+        .result, .history {
+            margin-top: 30px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .bike-card {
+            margin-bottom: 15px;
+        }
+        a {
+            color: #00ffcc;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 flex flex-col items-center justify-center min-h-screen p-6">
+<body>
+    <h1>🚴 Загрузите велосипед</h1>
 
-  <div class="max-w-3xl w-full bg-white rounded-2xl shadow-lg p-8">
-    <h1 class="text-3xl font-bold mb-6 text-center">🚲 Bike Price Scanner</h1>
-
-    <form method="post" enctype="multipart/form-data" class="space-y-4">
-      {% csrf_token %}
-
-      <label class="block w-full text-sm text-gray-600 font-medium">
-        📸 Выбери фото или используй камеру:
-        <input type="file"
-               name="image"
-               accept="image/*"
-               capture="environment"
-               required
-               class="mt-2 block w-full bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 cursor-pointer focus:outline-none">
-      </label>
-
-      <button type="submit"
-              class="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition">
-        Загрузить фото
-      </button>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="image" required>
+        <button type="submit">📸 Предсказать</button>
     </form>
 
     {% if result %}
-      <div class="mt-8 border-t pt-6">
-        <h2 class="text-xl font-semibold mb-2">🔍 Результат:</h2>
-        <p><strong>Тип:</strong> {{ result.type }}</p>
-        <p><strong>Цена:</strong> {{ result.estimated_price }}</p>
-        <img src="{{ result.photo.image.url }}" alt="Загруженный велик"
-             class="mt-4 rounded-lg shadow w-full max-h-96 object-contain">
-      </div>
-    {% endif %}
-
-    {% if history %}
-      <div class="mt-10 border-t pt-6">
-        <h2 class="text-xl font-semibold mb-4">🕓 История загрузок</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {% for item in history %}
-            <div class="border p-4 rounded-lg bg-gray-50 shadow-sm">
-              <img src="{{ item.image.url }}" alt="photo"
-                   class="rounded mb-2 w-full max-h-48 object-contain">
-              <p><strong>Тип:</strong> {{ item.predicted_type }}</p>
-              <p><strong>Цена:</strong> {{ item.estimated_price }}</p>
-              <p class="text-sm text-gray-500">{{ item.uploaded_at|date:"d M Y H:i" }}</p>
-            </div>
-          {% endfor %}
+        <div class="result">
+            <h2>Результат</h2>
+            {% if result.error %}
+                <p style="color: red;">{{ result.error }}</p>
+            {% else %}
+                <p><strong>Тип:</strong> {{ result.type }}</p>
+                <p><strong>Цена:</strong> {{ result.estimated_price }}</p>
+                <img src="{{ result.photo.image.url }}" width="300">
+            {% endif %}
         </div>
-      </div>
     {% endif %}
-  </div>
 
-  <p class="text-sm text-gray-500 mt-8">🛠 by @{{ user.username|default:"anon" }}</p>
+    {% if similar_bikes %}
+        <div class="result">
+            <h3>🔍 Похожие велосипеды на OLX:</h3>
+            <ul>
+                {% for bike in similar_bikes %}
+                    <li>
+                        <a href="{{ bike.url }}" target="_blank">{{ bike.title }}</a>
+                        — {{ bike.price }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="history">
+        <h3>🕓 История загрузок:</h3>
+        {% for photo in history %}
+            <div class="bike-card">
+                <p><strong>{{ photo.uploaded_at|date:"d.m.Y H:i" }}</strong></p>
+                <img src="{{ photo.image.url }}" width="200">
+                <p>Тип: {{ photo.predicted_type }} | Цена: {{ photo.estimated_price }}</p>
+            </div>
+        {% empty %}
+            <p>История пуста.</p>
+        {% endfor %}
+    </div>
 </body>
 </html>
