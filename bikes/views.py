@@ -71,17 +71,18 @@ class BikePricePredictionView(APIView):
         return Response(serializer.errors, status=400)
 
 
-
 def upload_bike_photo(request):
     result = None
 
     if request.method == 'POST' and request.FILES.get('image'):
         photo = BikePhoto.objects.create(image=request.FILES['image'])
         predicted_label = predict_image_class(photo.image.path)
-        if "bike" in predicted_label.lower():
-            price = "от 300 до 500 $"
-        else:
-            price = "неизвестно"
+        price = "от 300 до 500 $" if "bike" in predicted_label.lower() else "неизвестно"
+
+        # сохраняем результат в базу
+        photo.predicted_type = predicted_label
+        photo.estimated_price = price
+        photo.save()
 
         result = {
             "type": predicted_label,
@@ -89,4 +90,8 @@ def upload_bike_photo(request):
             "photo": photo,
         }
 
-    return render(request, 'bikes/upload.html', {'result': result})
+    # получаем все предыдущие загрузки
+    history = BikePhoto.objects.order_by('-uploaded_at')
+
+    return render(request, 'bikes/upload.html', {'result': result, 'history': history})
+
